@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <!-- Meta tags for social media banners -->
+    <meta name="description"
+        content="NeuroStat — an end-to-end detector that synergizes token-level statistics and deep semantics for adversarial AIGC text detection. Accepted to EMNLP 2026 Findings.">
+    <meta name="author" content="Peiming Li, Yifan Wang, Zhiyuan Hu, Shiyu Li, Zheng Wei, Yang Tang">
+    <meta property="og:title" content="Beyond Global Scalars: Synergizing Token-Level Statistics and Deep Semantics for Adversarial AIGC Text Detection" />
+    <meta property="og:description"
+        content="NeuroStat fuses uncompressed token-level probabilistic logits with deep semantic hidden states from a single causal-LM backbone, evaluated on the 16,000-sample MOSAIC adversarial benchmark. Accepted to EMNLP 2026 Findings." />
+    <meta property="og:url" content="./index.html" />
+    <meta property="og:image" content="fig/pipeline.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:title" content="NeuroStat: Token-Level Statistics meet Deep Semantics">
+    <meta name="twitter:description"
+        content="A dual-branch detector synergizing token-level statistics and deep semantics for adversarial AIGC text detection.">
+    <meta name="twitter:image" content="fig/pipeline.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="keywords" content="AIGC Text Detection, Machine-Generated Text, Adversarial Robustness, Token-Level Statistics, Self-Distillation">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>NeuroStat: Beyond Global Scalars for Adversarial AIGC Text Detection</title>
+    <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --accent-color: #a855f7;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        body {
+            font-family: 'Noto Sans', sans-serif;
+        }
+
+        .hero-body {
+            padding: 3rem 1.5rem;
+        }
+
+        .publication-title {
+            font-family: 'Google Sans', sans-serif;
+            font-weight: 700;
+            background: var(--bg-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .publication-authors {
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .author-block {
+            display: inline-block;
+        }
+
+        .link-block a {
+            margin: 5px;
+        }
+
+        .button.is-dark {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .button.is-dark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .button.is-dark[disabled] {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        section.hero.is-light {
+            background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .hero.is-small .hero-body {
+            padding: 2rem 1.5rem;
+        }
+
+        .section {
+            padding: 3rem 1.5rem;
+        }
+
+        .content h2.title {
+            font-family: 'Google Sans', sans-serif;
+            color: var(--primary-color);
+        }
+
+        .content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-left: 4px solid var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        .feature-card h4 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .figure-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin: 2rem 0;
+        }
+
+        .figure-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .figure-caption {
+            margin-top: 1rem;
+            font-style: italic;
+            color: #64748b;
+            text-align: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        table.results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        table.results-table th {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 12px 16px;
+            text-align: center;
+        }
+
+        table.results-table td {
+            padding: 10px 16px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        table.results-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        pre {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .method-step {
+            display: flex;
+            align-items: flex-start;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .method-step .step-number {
+            background: var(--bg-gradient);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .formula-box {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        footer {
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 2rem;
+        }
+
+        footer a {
+            color: #a5b4fc;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        .icon-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media screen and (max-width: 768px) {
+            .publication-title {
+                font-size: 1.5rem !important;
+            }
+
+            .hero-body {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container is-max-desktop">
+                <div class="columns is-centered">
+                    <div class="column has-text-centered">
+                        <h1 class="title is-2 publication-title">
+                            Beyond Global Scalars: Synergizing Token-Level Statistics and Deep Semantics for Adversarial AIGC Text Detection
+                        </h1>
+
+                        <div class="is-size-5 publication-authors" style="margin-top: 1.5rem;">
+                            <span class="author-block">Peiming Li,</span>
+                            <span class="author-block">Yifan Wang,</span>
+                            <span class="author-block">Zhiyuan Hu,</span>
+                            <span class="author-block">Shiyu Li,</span>
+                            <span class="author-block">Zheng Wei,</span>
+                            <span class="author-block">Yang Tang</span>
+                        </div>
+
+                        <div class="is-size-6 publication-authors" style="margin-top: 1rem; color: #64748b;">
+                            <span class="author-block">Accepted to <b>EMNLP 2026 Findings</b></span>
+                        </div>
+
+                        <!-- Links -->
+                        <div class="link-block" style="margin-top: 2rem;">
+                            <a href="https://arxiv.org/abs/2608.28009" target="_blank"
+                                class="external-link button is-normal is-rounded is-dark">
+                                <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                                <span>Paper</span>
+                            </a>
+                            <a href="https://arxiv.org/abs/2608.28009" target="_blank"
+                                class="external-link button is-normal is-rounded is-dark">
+                                <span class="icon ai ai-arxiv"></span>
+                                <span>arXiv</span>
+                            </a>
+                            <a href="https://github.com/TencentBAC/NeuroStat" target="_blank"
+                                class="external-link button is-normal is-rounded is-dark">
+                                <span class="icon"><i class="fas fa-code"></i></span>
+                                <span>Code</span>
+                            </a>
+                            <a href="https://huggingface.co/collections/TencentBAC/neurostat" class="external-link button is-normal is-rounded is-dark">
+                                <span class="icon"><i class="fas fa-database"></i></span>
+                                <span>MOSAIC Benchmark</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Abstract -->
+    <section class="section hero is-light">
+        <div class="container is-max-desktop">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-four-fifths">
+                    <h2 class="title is-3">📄 Abstract</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            The rapid advancement of large language models has made machine-generated text detection
+                            critically important. Existing approaches largely fall into two disjoint paradigms:
+                            <strong>training-free</strong> methods that rely on global statistical scalars (e.g.
+                            perplexity), and <strong>training-based</strong> methods that leverage semantic hidden
+                            states. Both exhibit clear vulnerabilities under adversarial conditions &mdash; global
+                            scalars are a lossy compression that masks local probability
+                            <em>burstiness</em> in interleaved text, while purely semantic models tend to over-fit
+                            spurious "fingerprints" and are easily fooled by evasion attacks.
+                        </p>
+                        <p>
+                            To expose these failure modes, we introduce <b style="color:#6366f1;">MOSAIC</b>, a
+                            comprehensive adversarial benchmark of <b style="color:#6366f1;">16,000 samples</b>
+                            spanning the full spectrum of attack granularities. To address the underlying issues, we
+                            propose <b style="color:#6366f1;">NeuroStat</b>, a framework that bridges the gap between
+                            statistics and semantics by jointly capturing <b style="color:#6366f1;">uncompressed
+                            token-level probabilistic logits</b> and <b style="color:#6366f1;">deep semantic hidden
+                            states</b> from a single causal-LM backbone. These heterogeneous signals are fused via
+                            <b style="color:#6366f1;">Macro-State Residual Modulation</b>, which uses global
+                            uncertainty indicators to adaptively calibrate local convolutional features, while an
+                            <strong>orthogonal loss</strong> and a <strong>contrastive loss</strong> ensure the
+                            learned representations remain complementary.
+                        </p>
+                        <p>
+                            Extensive experiments show that NeuroStat maintains remarkable robustness on the MOSAIC
+                            benchmark, in contrast to the severe performance degradation of state-of-the-art methods
+                            under adversarial conditions, establishing a new standard for adversarial text detection.
+                        </p>
+                        <div class="highlight-box">
+                            <p style="margin: 0;">
+                                <strong>🎯 Key Idea:</strong> Don't throw away the token-level signal — let a
+                                lightweight CNN learn from the full log-probability curve, and use global uncertainty
+                                statistics only to <em>modulate</em>, not replace, that fine-grained evidence.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Introduction -->
+    <section class="section" id="Introduction">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">💡 Introduction</h2>
+                    <div class="figure-container">
+                        <img src="fig/motivation.png" alt="Motivation of NeuroStat">
+                        <p class="figure-caption">
+                            <strong>Figure 1.</strong> Motivation of NeuroStat. Collapsing the per-token
+                            log-probability curve into a few global scalars discards fine-grained statistical
+                            patterns that adversarial rewriting attacks specifically target, while ignoring the
+                            curve altogether sacrifices deep semantic evidence. NeuroStat keeps <em>both</em>
+                            signals from a single backbone pass.
+                        </p>
+                    </div>
+                    <div class="content has-text-justified">
+                        <p>
+                            Scoring-based AIGC detectors probe a text with a language model and reduce the resulting
+                            per-token probability sequence into global summary statistics for classification. This
+                            compression is efficient but brittle: adversarial rewriting operations — paraphrasing,
+                            cross-lingual round-tripping, character-level perturbation — are designed to shift these
+                            global scalars just enough to evade detection, while leaving detectable local
+                            irregularities in the raw token-level curve.
+                        </p>
+                        <p>
+                            NeuroStat is built around a simple principle: <strong>keep the uncompressed token-level
+                            signal</strong>, and let a lightweight model learn discriminative local patterns directly
+                            from it, while still leveraging global uncertainty statistics — not to replace the
+                            local signal, but to adaptively <em>modulate</em> it.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Method -->
+    <section class="section hero is-light" id="Method">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">🔬 Method</h2>
+                    <div class="figure-container">
+                        <img src="fig/pipeline.png" alt="Pipeline of NeuroStat">
+                        <p class="figure-caption">
+                            <strong>Figure 2.</strong> Overview of the NeuroStat pipeline. A single causal-LM
+                            backbone produces next-token logits and last-layer hidden states in one forward pass.
+                            The <strong>TF branch</strong> encodes the per-token log-probability curve with a 1D-CNN,
+                            residually modulated by global uncertainty indicators (mean entropy, mean log-rank) via
+                            <strong>Macro-State Residual Modulation</strong>. The <strong>TB branch</strong>
+                            attention-pools the semantic hidden states. The fused representation
+                            <code>[z<sub>tf</sub> ; z<sub>tb</sub>]</code> is classified by an MLP head, jointly
+                            trained with cross-entropy, supervised contrastive, and orthogonal-penalty losses.
+                        </p>
+                    </div>
+                    <div class="formula-box">
+                        <code>L = L<sub>CE</sub> + &lambda;<sub>supcon</sub> &middot; L<sub>SupCon</sub> + &lambda;<sub>orth</sub> &middot; L<sub>Orth</sub></code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Features / Overview -->
+    <section class="section" id="Features">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">🌟 Key Features</h2>
+
+                    <div class="columns is-multiline is-centered" style="margin-top: 2rem;">
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-chart-line"></i> Token-Level Statistical (TF) Branch</h4>
+                                <p>Processes the uncompressed per-token log-probability curve with a 1D-CNN instead
+                                    of collapsing it into global scalars.</p>
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-sliders-h"></i> Macro-State Residual Modulation</h4>
+                                <p>A residual sigmoid gate driven by global uncertainty statistics (mean entropy,
+                                    mean log-rank) adaptively recalibrates the token-level CNN feature map.</p>
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-brain"></i> Deep Semantic (TB) Branch</h4>
+                                <p>Attention-pools the last-layer hidden states of the same backbone, capturing
+                                    high-level semantic cues purely statistical signals miss.</p>
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-project-diagram"></i> Complementary Fusion</h4>
+                                <p>A supervised contrastive loss shapes the fused embedding space, while an explicit
+                                    orthogonal penalty keeps the TF and TB branches non-redundant.</p>
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-shield-alt"></i> MOSAIC Adversarial Benchmark</h4>
+                                <p>An 8-category adversarial benchmark released with this repository for
+                                    stress-testing detectors beyond standard in-domain evaluation.</p>
+                            </div>
+                        </div>
+                        <div class="column is-6">
+                            <div class="feature-card">
+                                <h4><i class="fas fa-bolt"></i> Single-Backbone Efficiency</h4>
+                                <p>Both branches are extracted from one causal-LM forward pass — no external scoring
+                                    model or separate embedding model required.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MOSAIC Benchmark -->
+    <section class="section hero is-light" id="MOSAIC">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">🧩 MOSAIC Adversarial Benchmark</h2>
+                    <div class="figure-container">
+                        <img src="fig/MOSAIC.png" alt="Overview of the MOSAIC adversarial benchmark">
+                        <p class="figure-caption">
+                            <strong>Figure 3.</strong> MOSAIC comprises <strong>16,000 samples</strong> spanning eight
+                            adversarial attack themes across the full spectrum of attack granularities, designed to
+                            evaluate AIGC text detectors beyond standard in-domain settings.
+                        </p>
+                    </div>
+                    <p class="figure-caption">
+                        Each file follows the <code>MIRAGE</code> pair format
+                        (<code>{"original": ..., "rewritten": ...}</code>), so any detector &mdash; not just
+                        NeuroStat &mdash; can be evaluated against it. See the
+                        <a href="../README.md" target="_blank">README</a> for evaluation instructions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Evaluation Protocol -->
+    <section class="section" id="Evaluation">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">📊 Evaluation Protocol</h2>
+                    <div class="content has-text-justified">
+                        <p>
+                            NeuroStat is evaluated with standard binary-detection metrics computed over
+                            human-written (<code>original</code>) versus machine-generated (<code>rewritten</code>)
+                            text pairs: <strong>AUROC</strong>, <strong>AUPR</strong>,
+                            <strong>Matthews Correlation Coefficient (MCC)</strong>,
+                            <strong>Balanced Accuracy</strong>, and <strong>TPR at FPR&nbsp;=&nbsp;5%</strong>.
+                            The evaluation script reports metrics both at a fixed decision threshold and at the
+                            empirically best threshold, together with raw per-sample scores for downstream analysis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Citation -->
+    <section class="section hero is-light" id="Citation">
+        <div class="container is-max-desktop content">
+            <div class="columns is-centered has-text-centered">
+                <div class="column is-five-fifths">
+                    <h2 class="title is-3">📝 Citation</h2>
+                    <pre style="text-align: left;"><code>@misc{li2026globalscalarssynergizingtokenlevel,
+      title={Beyond Global Scalars: Synergizing Token-Level Statistics and Deep Semantics for Adversarial AIGC Text Detection}, 
+      author={Peiming Li and Yifan Wang and Zhiyuan Hu and Shiyu Li and Zheng Wei and Yang Tang},
+      year={2026},
+      eprint={2608.28009},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2608.28009}, 
+}
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-8">
+                    <div class="content has-text-centered">
+                        <p>
+                            This page was built using the <a
+                                href="https://github.com/eliahuhorwitz/Academic-project-page-template"
+                                target="_blank">Academic Project Page Template</a>.
+                        </p>
+                        <p>
+                            &copy; 2026 NeuroStat | Accepted to EMNLP 2026 Findings &mdash;
+                            <a href="https://arxiv.org/abs/2608.28009" target="_blank">arXiv:2608.28009</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

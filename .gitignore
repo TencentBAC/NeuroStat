@@ -1,0 +1,26 @@
+# MOSAIC benchmark data is not distributed with the repository
+benchmark/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Training artifacts
+ckpt/
+checkpoints/
+runs/
+outputs/
+results/
+*.log
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
